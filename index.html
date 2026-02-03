@@ -2,8 +2,8 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jogo do Bicho - Gerador de Jogos</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Jogo do Bicho - Gerador Inteligente</title>
     <style>
         * {
             margin: 0;
@@ -15,64 +15,103 @@
             font-family: 'Arial', sans-serif;
             background: linear-gradient(135deg, #1a5c1a 0%, #0d3d0d 100%);
             min-height: 100vh;
-            padding: 20px;
         }
 
         .container {
             max-width: 1200px;
             margin: 0 auto;
+            padding: 15px;
         }
 
         header {
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
+            padding-top: 10px;
         }
 
         h1 {
             color: #ffd700;
-            font-size: 2.5rem;
+            font-size: 2rem;
             text-shadow: 3px 3px 6px rgba(0,0,0,0.5);
-            margin-bottom: 10px;
+            margin-bottom: 5px;
         }
 
         .subtitle {
             color: #fff;
-            font-size: 1.1rem;
+            font-size: 0.95rem;
             opacity: 0.9;
         }
 
-        /* Área do Resultado */
-        .resultado-area {
-            background: linear-gradient(145deg, #2d1810, #1a0f0a);
-            border: 8px solid #8b4513;
-            border-radius: 20px;
-            padding: 30px;
-            margin-bottom: 30px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.5), inset 0 2px 10px rgba(255,215,0,0.1);
+        /* Navegação por abas */
+        .tabs {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
         }
 
-        .resultado-header {
+        .tab-btn {
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            border: 2px solid #ffd700;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .tab-btn.active, .tab-btn:hover {
+            background: #ffd700;
+            color: #1a0f0a;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Área do Palpite Inteligente */
+        .palpite-area {
+            background: linear-gradient(145deg, #2d1810, #1a0f0a);
+            border: 6px solid #8b4513;
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        }
+
+        .palpite-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 25px;
+            margin-bottom: 20px;
             flex-wrap: wrap;
-            gap: 15px;
+            gap: 10px;
         }
 
-        .resultado-titulo {
+        .palpite-titulo {
             color: #ffd700;
-            font-size: 1.5rem;
+            font-size: 1.3rem;
             text-transform: uppercase;
-            letter-spacing: 2px;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
         }
 
         .btn-gerar {
             background: linear-gradient(145deg, #ffd700, #ff8c00);
             color: #1a0f0a;
             border: none;
-            padding: 15px 40px;
-            font-size: 1.2rem;
+            padding: 12px 25px;
+            font-size: 1rem;
             font-weight: bold;
             border-radius: 50px;
             cursor: pointer;
@@ -82,128 +121,262 @@
         }
 
         .btn-gerar:hover {
-            transform: translateY(-3px);
+            transform: translateY(-2px);
             box-shadow: 0 8px 30px rgba(255,215,0,0.6);
         }
 
-        .btn-gerar:active {
-            transform: translateY(0);
+        .btn-gerar.secundario {
+            background: linear-gradient(145deg, #4CAF50, #2E7D32);
+            color: #fff;
+            box-shadow: 0 5px 20px rgba(76,175,80,0.4);
         }
 
-        /* Cards do Resultado */
-        .resultado-cards {
+        /* Cards do Palpite */
+        .palpite-cards {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 20px;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
         }
 
-        .resultado-card {
+        .palpite-card {
             background: linear-gradient(145deg, #f5f5dc, #ddd8c4);
             border: 4px solid #8b4513;
             border-radius: 15px;
-            padding: 20px;
+            padding: 15px;
             text-align: center;
             box-shadow: 0 5px 15px rgba(0,0,0,0.3);
             transition: transform 0.3s ease;
         }
 
-        .resultado-card:hover {
-            transform: scale(1.05);
+        .palpite-card:hover {
+            transform: scale(1.03);
         }
 
-        .resultado-card .premio {
+        .palpite-card .premio {
             background: #8b0000;
             color: #fff;
-            padding: 5px 15px;
+            padding: 4px 12px;
             border-radius: 20px;
-            font-size: 0.9rem;
+            font-size: 0.8rem;
             font-weight: bold;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
             display: inline-block;
         }
 
-        .resultado-card .animal-emoji {
-            font-size: 4rem;
-            margin: 10px 0;
-            filter: drop-shadow(2px 2px 3px rgba(0,0,0,0.3));
+        .palpite-card .animal-emoji {
+            font-size: 3rem;
+            margin: 8px 0;
         }
 
-        .resultado-card .grupo {
-            font-size: 2rem;
+        .palpite-card .grupo {
+            font-size: 1.5rem;
             font-weight: bold;
             color: #1a0f0a;
-            margin: 10px 0;
         }
 
-        .resultado-card .animal-nome {
-            font-size: 1.3rem;
+        .palpite-card .animal-nome {
+            font-size: 1rem;
             color: #8b4513;
             font-weight: bold;
             text-transform: uppercase;
         }
 
-        .resultado-card .dezenas {
+        .palpite-card .dezenas {
             background: #1a0f0a;
             color: #ffd700;
-            padding: 8px;
+            padding: 6px;
             border-radius: 8px;
             font-family: 'Courier New', monospace;
-            font-size: 1.1rem;
-            margin-top: 10px;
-            letter-spacing: 2px;
+            font-size: 1rem;
+            margin-top: 8px;
+        }
+
+        .palpite-card .probabilidade {
+            background: #4CAF50;
+            color: #fff;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 0.75rem;
+            margin-top: 8px;
+            display: inline-block;
+        }
+
+        /* Histórico de Resultados */
+        .historico-section {
+            background: linear-gradient(145deg, #1a1a2e, #16213e);
+            border: 6px solid #0f3460;
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .historico-titulo {
+            color: #00d4ff;
+            font-size: 1.3rem;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .historico-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 15px;
+            max-height: 400px;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+
+        .historico-grid::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .historico-grid::-webkit-scrollbar-track {
+            background: rgba(255,255,255,0.1);
+            border-radius: 4px;
+        }
+
+        .historico-grid::-webkit-scrollbar-thumb {
+            background: #00d4ff;
+            border-radius: 4px;
+        }
+
+        .historico-item {
+            background: rgba(255,255,255,0.05);
+            border: 2px solid rgba(0,212,255,0.3);
+            border-radius: 12px;
+            padding: 12px;
+        }
+
+        .historico-item .data {
+            color: #00d4ff;
+            font-size: 0.85rem;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        .historico-item .resultados {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .historico-item .resultado-mini {
+            background: rgba(255,255,255,0.1);
+            padding: 5px 10px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.85rem;
+            color: #fff;
+        }
+
+        .historico-item .resultado-mini .pos {
+            color: #ffd700;
+            font-weight: bold;
+        }
+
+        /* Estatísticas */
+        .stats-section {
+            background: linear-gradient(145deg, #2d1810, #1a0f0a);
+            border: 6px solid #8b4513;
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .stats-titulo {
+            color: #ffd700;
+            font-size: 1.3rem;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 10px;
+        }
+
+        .stat-bicho {
+            background: rgba(255,255,255,0.05);
+            border: 2px solid rgba(255,215,0,0.3);
+            border-radius: 10px;
+            padding: 10px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .stat-bicho:hover {
+            border-color: #ffd700;
+            transform: scale(1.05);
+        }
+
+        .stat-bicho .emoji {
+            font-size: 1.8rem;
+        }
+
+        .stat-bicho .nome {
+            color: #fff;
+            font-size: 0.7rem;
+            margin: 5px 0;
+        }
+
+        .stat-bicho .freq {
+            background: #ffd700;
+            color: #1a0f0a;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.75rem;
+            font-weight: bold;
+        }
+
+        .stat-bicho.quente {
+            border-color: #ff4444;
+            background: rgba(255,68,68,0.2);
+        }
+
+        .stat-bicho.frio {
+            border-color: #4444ff;
+            background: rgba(68,68,255,0.2);
         }
 
         /* Tabela de Bichos */
         .tabela-section {
             background: linear-gradient(145deg, #f5f5dc, #e8e4d0);
-            border: 8px solid #8b4513;
+            border: 6px solid #8b4513;
             border-radius: 20px;
-            padding: 25px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+            padding: 20px;
+            margin-bottom: 20px;
         }
 
         .tabela-titulo {
             text-align: center;
             color: #8b0000;
-            font-size: 1.8rem;
-            margin-bottom: 20px;
+            font-size: 1.3rem;
+            margin-bottom: 15px;
             text-transform: uppercase;
-            letter-spacing: 3px;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
         }
 
         .tabela-bichos {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-            gap: 12px;
+            grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+            gap: 10px;
         }
 
         .bicho-card {
             background: linear-gradient(145deg, #fff, #f0ead6);
             border: 3px solid #8b4513;
-            border-radius: 12px;
-            padding: 12px 8px;
+            border-radius: 10px;
+            padding: 10px 6px;
             text-align: center;
             cursor: pointer;
             transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .bicho-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: linear-gradient(90deg, #ffd700, #ff8c00);
         }
 
         .bicho-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 25px rgba(139,69,19,0.4);
-            border-color: #ffd700;
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(139,69,19,0.4);
         }
 
         .bicho-card.selecionado {
@@ -214,212 +387,371 @@
         .bicho-card .numero {
             background: #8b0000;
             color: #fff;
-            width: 32px;
-            height: 32px;
+            width: 28px;
+            height: 28px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: bold;
-            font-size: 1rem;
-            margin: 0 auto 8px;
+            font-size: 0.85rem;
+            margin: 0 auto 5px;
         }
 
         .bicho-card .emoji {
-            font-size: 2.5rem;
-            margin: 5px 0;
+            font-size: 2rem;
         }
 
         .bicho-card .nome {
-            font-size: 0.85rem;
+            font-size: 0.7rem;
             color: #1a0f0a;
             font-weight: bold;
-            text-transform: uppercase;
-            margin: 5px 0;
         }
 
         .bicho-card .dezenas-pequenas {
-            font-size: 0.75rem;
+            font-size: 0.65rem;
             color: #666;
-            font-family: 'Courier New', monospace;
         }
 
-        /* Estatísticas */
-        .stats-bar {
+        /* Split Screen - Área de Jogo */
+        .split-screen {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 1000;
+            flex-direction: column;
+        }
+
+        .split-screen.active {
             display: flex;
-            justify-content: center;
-            gap: 30px;
-            margin-top: 25px;
+        }
+
+        .split-palpite {
+            background: linear-gradient(145deg, #1a5c1a, #0d3d0d);
+            padding: 15px;
+            max-height: 45vh;
+            overflow-y: auto;
+            border-bottom: 4px solid #ffd700;
+        }
+
+        .split-palpite .palpite-mini {
+            display: flex;
             flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            align-items: center;
         }
 
-        .stat-item {
-            background: #8b4513;
-            color: #fff;
-            padding: 10px 25px;
-            border-radius: 30px;
+        .split-palpite .palpite-item {
+            background: linear-gradient(145deg, #f5f5dc, #ddd8c4);
+            border: 3px solid #8b4513;
+            border-radius: 10px;
+            padding: 8px 12px;
             text-align: center;
+            min-width: 80px;
         }
 
-        .stat-item span {
-            display: block;
-            font-size: 1.5rem;
+        .split-palpite .palpite-item .emoji {
+            font-size: 1.8rem;
+        }
+
+        .split-palpite .palpite-item .info {
+            font-size: 0.75rem;
             font-weight: bold;
-            color: #ffd700;
+            color: #8b4513;
         }
 
-        /* Footer */
-        footer {
-            text-align: center;
-            margin-top: 30px;
-            color: rgba(255,255,255,0.7);
+        .split-palpite .palpite-item .milhar {
+            font-family: 'Courier New', monospace;
             font-size: 0.9rem;
+            color: #1a0f0a;
+            font-weight: bold;
         }
 
-        /* Animação de sorteio */
-        @keyframes sortear {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.1); }
+        .split-iframe {
+            flex: 1;
+            background: #000;
         }
 
-        .sorteando .resultado-card {
-            animation: sortear 0.3s ease infinite;
+        .split-iframe iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
         }
 
-        /* Responsivo */
-        @media (max-width: 600px) {
-            h1 {
-                font-size: 1.8rem;
-            }
+        .split-close {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #ff4444;
+            color: #fff;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            font-size: 1.5rem;
+            cursor: pointer;
+            z-index: 1001;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.5);
+        }
 
-            .resultado-card .animal-emoji {
-                font-size: 3rem;
-            }
+        .split-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
 
-            .tabela-bichos {
-                grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-                gap: 8px;
-            }
+        .split-header h3 {
+            color: #ffd700;
+            font-size: 1rem;
+        }
 
-            .bicho-card .emoji {
-                font-size: 2rem;
-            }
+        /* Placeholder para plataforma */
+        .platform-placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #fff;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .platform-placeholder .icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+        }
+
+        .platform-placeholder p {
+            margin: 10px 0;
+            opacity: 0.8;
+        }
+
+        .platform-placeholder input {
+            padding: 12px 20px;
+            border: 2px solid #ffd700;
+            border-radius: 25px;
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            font-size: 1rem;
+            width: 100%;
+            max-width: 400px;
+            margin: 10px 0;
+        }
+
+        .platform-placeholder input::placeholder {
+            color: rgba(255,255,255,0.5);
+        }
+
+        .platform-placeholder .btn-salvar {
+            background: #ffd700;
+            color: #1a0f0a;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
         }
 
         /* Legenda */
         .legenda {
             background: rgba(0,0,0,0.3);
             border-radius: 10px;
-            padding: 15px;
-            margin-top: 20px;
+            padding: 12px;
+            margin-top: 15px;
             color: #fff;
             text-align: center;
-        }
-
-        .legenda p {
-            margin: 5px 0;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
         }
 
         .legenda strong {
             color: #ffd700;
+        }
+
+        /* Animações */
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .animando .palpite-card {
+            animation: pulse 0.2s ease infinite;
+        }
+
+        /* Responsivo */
+        @media (max-width: 600px) {
+            h1 { font-size: 1.5rem; }
+            .palpite-card .animal-emoji { font-size: 2.5rem; }
+            .tabela-bichos { grid-template-columns: repeat(5, 1fr); gap: 6px; }
+            .bicho-card { padding: 6px 4px; }
+            .bicho-card .emoji { font-size: 1.5rem; }
+            .bicho-card .nome { font-size: 0.6rem; }
+            .bicho-card .dezenas-pequenas { display: none; }
+            .stats-grid { grid-template-columns: repeat(5, 1fr); }
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 15px;
+            color: rgba(255,255,255,0.6);
+            font-size: 0.8rem;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>🎰 JOGO DO BICHO 🎰</h1>
-            <p class="subtitle">Gerador de Jogos Aleatórios - Tabela Tradicional</p>
+            <h1>JOGO DO BICHO</h1>
+            <p class="subtitle">Gerador Inteligente com Probabilidades</p>
         </header>
 
-        <!-- Área de Resultado -->
-        <section class="resultado-area">
-            <div class="resultado-header">
-                <h2 class="resultado-titulo">🏆 Resultado do Sorteio</h2>
-                <button class="btn-gerar" onclick="sortearJogo()">
-                    🎲 SORTEAR JOGO
-                </button>
-            </div>
+        <!-- Navegação -->
+        <div class="tabs">
+            <button class="tab-btn active" onclick="showTab('palpite')">PALPITE</button>
+            <button class="tab-btn" onclick="showTab('historico')">HISTORICO</button>
+            <button class="tab-btn" onclick="showTab('tabela')">TABELA</button>
+        </div>
 
-            <div class="resultado-cards" id="resultadoCards">
-                <div class="resultado-card">
-                    <span class="premio">1º Prêmio</span>
-                    <div class="animal-emoji">❓</div>
-                    <div class="grupo">--</div>
-                    <div class="animal-nome">Aguardando...</div>
-                    <div class="dezenas">----</div>
+        <!-- Tab Palpite -->
+        <div id="tab-palpite" class="tab-content active">
+            <section class="palpite-area">
+                <div class="palpite-header">
+                    <h2 class="palpite-titulo">SEU PALPITE</h2>
+                    <div class="btn-group">
+                        <button class="btn-gerar" onclick="gerarPalpiteInteligente()">
+                            GERAR PALPITE
+                        </button>
+                        <button class="btn-gerar secundario" onclick="abrirModoJogo()">
+                            JOGAR
+                        </button>
+                    </div>
                 </div>
-                <div class="resultado-card">
-                    <span class="premio">2º Prêmio</span>
-                    <div class="animal-emoji">❓</div>
-                    <div class="grupo">--</div>
-                    <div class="animal-nome">Aguardando...</div>
-                    <div class="dezenas">----</div>
-                </div>
-                <div class="resultado-card">
-                    <span class="premio">3º Prêmio</span>
-                    <div class="animal-emoji">❓</div>
-                    <div class="grupo">--</div>
-                    <div class="animal-nome">Aguardando...</div>
-                    <div class="dezenas">----</div>
-                </div>
-                <div class="resultado-card">
-                    <span class="premio">4º Prêmio</span>
-                    <div class="animal-emoji">❓</div>
-                    <div class="grupo">--</div>
-                    <div class="animal-nome">Aguardando...</div>
-                    <div class="dezenas">----</div>
-                </div>
-                <div class="resultado-card">
-                    <span class="premio">5º Prêmio</span>
-                    <div class="animal-emoji">❓</div>
-                    <div class="grupo">--</div>
-                    <div class="animal-nome">Aguardando...</div>
-                    <div class="dezenas">----</div>
-                </div>
-            </div>
 
-            <div class="legenda">
-                <p>💡 <strong>Como funciona:</strong> Cada grupo tem 4 dezenas. A dezena sorteada determina o animal vencedor.</p>
-                <p>🎯 Clique em <strong>"SORTEAR JOGO"</strong> para gerar 5 prêmios aleatórios!</p>
-            </div>
-        </section>
-
-        <!-- Tabela de Bichos -->
-        <section class="tabela-section">
-            <h2 class="tabela-titulo">📋 Tabela Oficial dos 25 Bichos</h2>
-
-            <div class="tabela-bichos" id="tabelaBichos">
-                <!-- Gerado via JavaScript -->
-            </div>
-
-            <div class="stats-bar">
-                <div class="stat-item">
-                    Total de Grupos<br>
-                    <span>25</span>
+                <div class="palpite-cards" id="palpiteCards">
+                    <div class="palpite-card">
+                        <span class="premio">1º</span>
+                        <div class="animal-emoji">❓</div>
+                        <div class="grupo">--</div>
+                        <div class="animal-nome">Aguarde...</div>
+                        <div class="dezenas">----</div>
+                    </div>
+                    <div class="palpite-card">
+                        <span class="premio">2º</span>
+                        <div class="animal-emoji">❓</div>
+                        <div class="grupo">--</div>
+                        <div class="animal-nome">Aguarde...</div>
+                        <div class="dezenas">----</div>
+                    </div>
+                    <div class="palpite-card">
+                        <span class="premio">3º</span>
+                        <div class="animal-emoji">❓</div>
+                        <div class="grupo">--</div>
+                        <div class="animal-nome">Aguarde...</div>
+                        <div class="dezenas">----</div>
+                    </div>
+                    <div class="palpite-card">
+                        <span class="premio">4º</span>
+                        <div class="animal-emoji">❓</div>
+                        <div class="grupo">--</div>
+                        <div class="animal-nome">Aguarde...</div>
+                        <div class="dezenas">----</div>
+                    </div>
+                    <div class="palpite-card">
+                        <span class="premio">5º</span>
+                        <div class="animal-emoji">❓</div>
+                        <div class="grupo">--</div>
+                        <div class="animal-nome">Aguarde...</div>
+                        <div class="dezenas">----</div>
+                    </div>
                 </div>
-                <div class="stat-item">
-                    Total de Dezenas<br>
-                    <span>100</span>
+
+                <div class="legenda">
+                    <strong>Baseado em probabilidades do historico!</strong> Bichos "quentes" tem mais chance de sair.
                 </div>
-                <div class="stat-item">
-                    Sorteios Realizados<br>
-                    <span id="contadorSorteios">0</span>
+            </section>
+
+            <!-- Estatísticas Rápidas -->
+            <section class="stats-section">
+                <h2 class="stats-titulo">BICHOS QUENTES E FRIOS</h2>
+                <div class="stats-grid" id="statsGrid">
+                    <!-- Gerado via JS -->
                 </div>
-            </div>
-        </section>
+            </section>
+        </div>
+
+        <!-- Tab Histórico -->
+        <div id="tab-historico" class="tab-content">
+            <section class="historico-section">
+                <h2 class="historico-titulo">ULTIMOS RESULTADOS</h2>
+                <div class="historico-grid" id="historicoGrid">
+                    <!-- Gerado via JS -->
+                </div>
+            </section>
+
+            <section class="stats-section">
+                <h2 class="stats-titulo">FREQUENCIA DOS BICHOS (Ultimos 30 sorteios)</h2>
+                <div class="stats-grid" id="statsGridFull">
+                    <!-- Gerado via JS -->
+                </div>
+            </section>
+        </div>
+
+        <!-- Tab Tabela -->
+        <div id="tab-tabela" class="tab-content">
+            <section class="tabela-section">
+                <h2 class="tabela-titulo">TABELA DOS 25 BICHOS</h2>
+                <div class="tabela-bichos" id="tabelaBichos">
+                    <!-- Gerado via JS -->
+                </div>
+            </section>
+        </div>
 
         <footer>
-            <p>🎲 Gerador de Jogos do Bicho - Apenas para fins educativos e de entretenimento 🎲</p>
+            <p>Gerador de Palpites - Apenas entretenimento</p>
         </footer>
     </div>
 
+    <!-- Split Screen para Jogar -->
+    <div class="split-screen" id="splitScreen">
+        <button class="split-close" onclick="fecharModoJogo()">×</button>
+
+        <div class="split-palpite">
+            <div class="split-header">
+                <h3>SEU PALPITE</h3>
+                <button class="btn-gerar" onclick="gerarPalpiteInteligente()" style="padding: 8px 15px; font-size: 0.85rem;">
+                    NOVO PALPITE
+                </button>
+            </div>
+            <div class="palpite-mini" id="palpiteMini">
+                <!-- Gerado via JS -->
+            </div>
+        </div>
+
+        <div class="split-iframe" id="splitIframe">
+            <div class="platform-placeholder" id="platformPlaceholder">
+                <div class="icon">🎰</div>
+                <h3>Configure a Plataforma de Jogo</h3>
+                <p>Cole o link do site onde você joga:</p>
+                <input type="url" id="platformUrl" placeholder="https://exemplo.com/jogo-do-bicho" value="https://amigosdobicho.com/" />
+                <button class="btn-salvar" onclick="salvarPlataforma()">SALVAR E ABRIR</button>
+                <p style="font-size: 0.8rem; margin-top: 20px;">O link será salvo no seu navegador.</p>
+            </div>
+            <iframe id="platformFrame" style="display: none;" sandbox="allow-same-origin allow-scripts allow-forms allow-popups"></iframe>
+        </div>
+    </div>
+
     <script>
-        // Tabela completa dos 25 bichos do Jogo do Bicho
+        // Tabela dos 25 bichos
         const bichos = [
             { grupo: 1, nome: "Avestruz", emoji: "🦢", dezenas: ["01", "02", "03", "04"] },
-            { grupo: 2, nome: "Águia", emoji: "🦅", dezenas: ["05", "06", "07", "08"] },
+            { grupo: 2, nome: "Aguia", emoji: "🦅", dezenas: ["05", "06", "07", "08"] },
             { grupo: 3, nome: "Burro", emoji: "🫏", dezenas: ["09", "10", "11", "12"] },
             { grupo: 4, nome: "Borboleta", emoji: "🦋", dezenas: ["13", "14", "15", "16"] },
             { grupo: 5, nome: "Cachorro", emoji: "🐕", dezenas: ["17", "18", "19", "20"] },
@@ -432,11 +764,11 @@
             { grupo: 12, nome: "Elefante", emoji: "🐘", dezenas: ["45", "46", "47", "48"] },
             { grupo: 13, nome: "Galo", emoji: "🐓", dezenas: ["49", "50", "51", "52"] },
             { grupo: 14, nome: "Gato", emoji: "🐈", dezenas: ["53", "54", "55", "56"] },
-            { grupo: 15, nome: "Jacaré", emoji: "🐊", dezenas: ["57", "58", "59", "60"] },
-            { grupo: 16, nome: "Leão", emoji: "🦁", dezenas: ["61", "62", "63", "64"] },
+            { grupo: 15, nome: "Jacare", emoji: "🐊", dezenas: ["57", "58", "59", "60"] },
+            { grupo: 16, nome: "Leao", emoji: "🦁", dezenas: ["61", "62", "63", "64"] },
             { grupo: 17, nome: "Macaco", emoji: "🐒", dezenas: ["65", "66", "67", "68"] },
             { grupo: 18, nome: "Porco", emoji: "🐷", dezenas: ["69", "70", "71", "72"] },
-            { grupo: 19, nome: "Pavão", emoji: "🦚", dezenas: ["73", "74", "75", "76"] },
+            { grupo: 19, nome: "Pavao", emoji: "🦚", dezenas: ["73", "74", "75", "76"] },
             { grupo: 20, nome: "Peru", emoji: "🦃", dezenas: ["77", "78", "79", "80"] },
             { grupo: 21, nome: "Touro", emoji: "🐂", dezenas: ["81", "82", "83", "84"] },
             { grupo: 22, nome: "Tigre", emoji: "🐅", dezenas: ["85", "86", "87", "88"] },
@@ -445,126 +777,276 @@
             { grupo: 25, nome: "Vaca", emoji: "🐄", dezenas: ["97", "98", "99", "00"] }
         ];
 
-        let contadorSorteios = 0;
+        // Histórico simulado de resultados (últimos 30 sorteios)
+        let historicoResultados = gerarHistoricoSimulado();
 
-        // Renderiza a tabela de bichos
-        function renderizarTabela() {
-            const container = document.getElementById('tabelaBichos');
-            container.innerHTML = bichos.map(bicho => `
-                <div class="bicho-card" data-grupo="${bicho.grupo}" onclick="destacarBicho(${bicho.grupo})">
-                    <div class="numero">${String(bicho.grupo).padStart(2, '0')}</div>
-                    <div class="emoji">${bicho.emoji}</div>
-                    <div class="nome">${bicho.nome}</div>
-                    <div class="dezenas-pequenas">${bicho.dezenas.join(" - ")}</div>
-                </div>
-            `).join('');
-        }
+        // Frequência dos bichos baseada no histórico
+        let frequenciaBichos = calcularFrequencia();
 
-        // Gera uma dezena aleatória e retorna o bicho correspondente
-        function sortearBicho() {
-            const dezena = Math.floor(Math.random() * 100);
-            const dezenaStr = String(dezena).padStart(2, '0');
+        // Palpite atual
+        let palpiteAtual = [];
 
-            // Encontra o bicho pela dezena
-            let bichoSorteado;
-            if (dezena === 0) {
-                bichoSorteado = bichos[24]; // Vaca (97-00)
-            } else {
-                const grupoIndex = Math.floor((dezena - 1) / 4);
-                bichoSorteado = bichos[grupoIndex];
+        // Gera histórico simulado
+        function gerarHistoricoSimulado() {
+            const historico = [];
+            const agora = new Date();
+
+            for (let i = 0; i < 30; i++) {
+                const data = new Date(agora);
+                data.setDate(data.getDate() - Math.floor(i / 3));
+
+                const horarios = ['14:00 - PT', '16:00 - PTN', '18:00 - Coruja', '21:00 - Federal'];
+                const horario = horarios[i % 4];
+
+                const resultados = [];
+                for (let j = 0; j < 5; j++) {
+                    const grupo = Math.floor(Math.random() * 25) + 1;
+                    const milhar = String(Math.floor(Math.random() * 10000)).padStart(4, '0');
+                    resultados.push({ grupo, milhar });
+                }
+
+                historico.push({
+                    data: data.toLocaleDateString('pt-BR'),
+                    horario,
+                    resultados
+                });
             }
 
-            return {
-                ...bichoSorteado,
-                dezenaSorteada: dezenaStr
-            };
+            return historico;
         }
 
-        // Gera milhar aleatório
-        function gerarMilhar() {
-            return String(Math.floor(Math.random() * 10000)).padStart(4, '0');
+        // Calcula frequência dos bichos
+        function calcularFrequencia() {
+            const freq = {};
+            bichos.forEach(b => freq[b.grupo] = 0);
+
+            historicoResultados.forEach(h => {
+                h.resultados.forEach(r => {
+                    freq[r.grupo]++;
+                });
+            });
+
+            return freq;
         }
 
-        // Sorteia o jogo completo (5 prêmios)
-        function sortearJogo() {
-            const container = document.getElementById('resultadoCards');
-            container.classList.add('sorteando');
+        // Gera palpite baseado em probabilidade
+        function gerarPalpiteInteligente() {
+            const container = document.getElementById('palpiteCards');
+            container.classList.add('animando');
+
+            // Cria array ponderado baseado na frequência
+            const bichosPonderados = [];
+            const maxFreq = Math.max(...Object.values(frequenciaBichos));
+
+            bichos.forEach(bicho => {
+                // Bichos mais frequentes têm mais peso
+                const peso = frequenciaBichos[bicho.grupo] + 1;
+                for (let i = 0; i < peso; i++) {
+                    bichosPonderados.push(bicho);
+                }
+            });
 
             // Animação de sorteio
             let iteracoes = 0;
-            const maxIteracoes = 10;
+            const maxIteracoes = 15;
 
             const intervalo = setInterval(() => {
                 if (iteracoes >= maxIteracoes) {
                     clearInterval(intervalo);
-                    container.classList.remove('sorteando');
+                    container.classList.remove('animando');
 
-                    // Resultado final
-                    const resultados = [];
-                    for (let i = 0; i < 5; i++) {
-                        resultados.push(sortearBicho());
+                    // Gera palpite final ponderado
+                    palpiteAtual = [];
+                    const usados = new Set();
+
+                    while (palpiteAtual.length < 5) {
+                        const idx = Math.floor(Math.random() * bichosPonderados.length);
+                        const bicho = bichosPonderados[idx];
+
+                        if (!usados.has(bicho.grupo)) {
+                            usados.add(bicho.grupo);
+                            const milhar = String(Math.floor(Math.random() * 10000)).padStart(4, '0');
+                            const prob = Math.round((frequenciaBichos[bicho.grupo] / (historicoResultados.length * 5)) * 100);
+                            palpiteAtual.push({ ...bicho, milhar, probabilidade: prob });
+                        }
                     }
 
-                    renderizarResultados(resultados, true);
+                    renderizarPalpite(palpiteAtual);
+                    atualizarPalpiteMini();
 
-                    // Atualiza contador
-                    contadorSorteios++;
-                    document.getElementById('contadorSorteios').textContent = contadorSorteios;
-
-                    // Destaca os bichos sorteados na tabela
-                    limparDestaques();
-                    resultados.forEach(r => {
-                        const card = document.querySelector(`[data-grupo="${r.grupo}"]`);
-                        if (card) card.classList.add('selecionado');
-                    });
+                    // Scroll suave para o palpite
+                    document.querySelector('.palpite-area').scrollIntoView({ behavior: 'smooth', block: 'start' });
 
                     return;
                 }
 
-                // Mostra resultados aleatórios durante animação
-                const tempResultados = [];
+                // Animação intermediária
+                const tempPalpite = [];
                 for (let i = 0; i < 5; i++) {
-                    tempResultados.push(sortearBicho());
+                    const idx = Math.floor(Math.random() * bichos.length);
+                    const milhar = String(Math.floor(Math.random() * 10000)).padStart(4, '0');
+                    tempPalpite.push({ ...bichos[idx], milhar });
                 }
-                renderizarResultados(tempResultados, false);
+                renderizarPalpite(tempPalpite, false);
 
                 iteracoes++;
-            }, 100);
+            }, 80);
         }
 
-        // Renderiza os resultados nos cards
-        function renderizarResultados(resultados, final) {
-            const container = document.getElementById('resultadoCards');
-            const premios = ['1º Prêmio', '2º Prêmio', '3º Prêmio', '4º Prêmio', '5º Prêmio'];
+        // Renderiza os cards de palpite
+        function renderizarPalpite(palpite, final = true) {
+            const container = document.getElementById('palpiteCards');
+            const premios = ['1º', '2º', '3º', '4º', '5º'];
 
-            container.innerHTML = resultados.map((r, i) => `
-                <div class="resultado-card">
+            container.innerHTML = palpite.map((p, i) => `
+                <div class="palpite-card">
                     <span class="premio">${premios[i]}</span>
-                    <div class="animal-emoji">${r.emoji}</div>
-                    <div class="grupo">${String(r.grupo).padStart(2, '0')}</div>
-                    <div class="animal-nome">${r.nome}</div>
-                    <div class="dezenas">${gerarMilhar()}</div>
+                    <div class="animal-emoji">${p.emoji}</div>
+                    <div class="grupo">${String(p.grupo).padStart(2, '0')}</div>
+                    <div class="animal-nome">${p.nome}</div>
+                    <div class="dezenas">${p.milhar}</div>
+                    ${final && p.probabilidade ? `<span class="probabilidade">${p.probabilidade}% freq</span>` : ''}
                 </div>
             `).join('');
         }
 
-        // Destaca um bicho na tabela quando clicado
-        function destacarBicho(grupo) {
-            limparDestaques();
-            const card = document.querySelector(`[data-grupo="${grupo}"]`);
-            if (card) card.classList.add('selecionado');
+        // Atualiza palpite mini no split screen
+        function atualizarPalpiteMini() {
+            const container = document.getElementById('palpiteMini');
+            if (palpiteAtual.length === 0) return;
+
+            container.innerHTML = palpiteAtual.map((p, i) => `
+                <div class="palpite-item">
+                    <div class="emoji">${p.emoji}</div>
+                    <div class="info">${i + 1}º - G${String(p.grupo).padStart(2, '0')}</div>
+                    <div class="milhar">${p.milhar}</div>
+                </div>
+            `).join('');
         }
 
-        // Limpa os destaques da tabela
-        function limparDestaques() {
-            document.querySelectorAll('.bicho-card').forEach(card => {
-                card.classList.remove('selecionado');
-            });
+        // Renderiza histórico
+        function renderizarHistorico() {
+            const container = document.getElementById('historicoGrid');
+
+            container.innerHTML = historicoResultados.map(h => `
+                <div class="historico-item">
+                    <div class="data">${h.data} - ${h.horario}</div>
+                    <div class="resultados">
+                        ${h.resultados.map((r, i) => {
+                            const bicho = bichos[r.grupo - 1];
+                            return `
+                                <div class="resultado-mini">
+                                    <span class="pos">${i + 1}º</span>
+                                    <span>${bicho.emoji}</span>
+                                    <span>${r.milhar}</span>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Renderiza estatísticas
+        function renderizarStats(containerId, limit = 10) {
+            const container = document.getElementById(containerId);
+
+            // Ordena por frequência
+            const sorted = [...bichos].sort((a, b) =>
+                frequenciaBichos[b.grupo] - frequenciaBichos[a.grupo]
+            );
+
+            const toShow = limit ? sorted.slice(0, limit) : sorted;
+            const maxFreq = Math.max(...Object.values(frequenciaBichos));
+            const minFreq = Math.min(...Object.values(frequenciaBichos));
+
+            container.innerHTML = toShow.map(bicho => {
+                const freq = frequenciaBichos[bicho.grupo];
+                let classe = '';
+                if (freq >= maxFreq - 2) classe = 'quente';
+                else if (freq <= minFreq + 2) classe = 'frio';
+
+                return `
+                    <div class="stat-bicho ${classe}">
+                        <div class="emoji">${bicho.emoji}</div>
+                        <div class="nome">${bicho.nome}</div>
+                        <div class="freq">${freq}x</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Renderiza tabela de bichos
+        function renderizarTabela() {
+            const container = document.getElementById('tabelaBichos');
+
+            container.innerHTML = bichos.map(bicho => `
+                <div class="bicho-card" data-grupo="${bicho.grupo}">
+                    <div class="numero">${String(bicho.grupo).padStart(2, '0')}</div>
+                    <div class="emoji">${bicho.emoji}</div>
+                    <div class="nome">${bicho.nome}</div>
+                    <div class="dezenas-pequenas">${bicho.dezenas.join("-")}</div>
+                </div>
+            `).join('');
+        }
+
+        // Navegação por abas
+        function showTab(tab) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+
+            document.getElementById(`tab-${tab}`).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // Modo de jogo split screen
+        function abrirModoJogo() {
+            if (palpiteAtual.length === 0) {
+                gerarPalpiteInteligente();
+                setTimeout(() => {
+                    document.getElementById('splitScreen').classList.add('active');
+                    atualizarPalpiteMini();
+                    carregarPlataforma();
+                }, 1500);
+            } else {
+                document.getElementById('splitScreen').classList.add('active');
+                atualizarPalpiteMini();
+                carregarPlataforma();
+            }
+        }
+
+        function fecharModoJogo() {
+            document.getElementById('splitScreen').classList.remove('active');
+        }
+
+        // Plataforma de jogo
+        function carregarPlataforma() {
+            const savedUrl = localStorage.getItem('platformUrl') || 'https://amigosdobicho.com/';
+            document.getElementById('platformUrl').value = savedUrl;
+            mostrarIframe(savedUrl);
+        }
+
+        function salvarPlataforma() {
+            const url = document.getElementById('platformUrl').value;
+            if (url) {
+                localStorage.setItem('platformUrl', url);
+                mostrarIframe(url);
+            }
+        }
+
+        function mostrarIframe(url) {
+            document.getElementById('platformPlaceholder').style.display = 'none';
+            const iframe = document.getElementById('platformFrame');
+            iframe.src = url;
+            iframe.style.display = 'block';
         }
 
         // Inicialização
         document.addEventListener('DOMContentLoaded', () => {
             renderizarTabela();
+            renderizarHistorico();
+            renderizarStats('statsGrid', 10);
+            renderizarStats('statsGridFull', null);
         });
     </script>
 </body>
