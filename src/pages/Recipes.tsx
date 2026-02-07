@@ -8,22 +8,12 @@ import RecipeFilters from '../components/recipes/RecipeFilters'
 import RecipeCard from '../components/recipes/RecipeCard'
 
 export default function Recipes() {
-  const { userData, updateUserData } = useUserData()
+  const { userData, toggleFavorite, isFavorite } = useUserData()
   const [searchQuery, setSearchQuery] = useState('')
   const [activeCategory, setActiveCategory] = useState<string | null>(null)
   const [isSearchFocused, setIsSearchFocused] = useState(false)
 
   const daysSinceStart = userData.startDate ? getDaysSinceStart(userData.startDate) : 1
-  const seenRecipes: string[] = (userData as any).seenRecipes || []
-  const favorites: string[] = userData.favorites || []
-
-  const toggleFavorite = (recipeId: string) => {
-    const currentFavorites = userData.favorites || []
-    const newFavorites = currentFavorites.includes(recipeId)
-      ? currentFavorites.filter((f: string) => f !== recipeId)
-      : [...currentFavorites, recipeId]
-    updateUserData({ favorites: newFavorites })
-  }
 
   const filteredRecipes = useMemo(() => {
     let result = recipes
@@ -39,7 +29,8 @@ export default function Recipes() {
       result = result.filter(
         (r) =>
           r.name.toLowerCase().includes(query) ||
-          r.description.toLowerCase().includes(query)
+          r.description.toLowerCase().includes(query) ||
+          r.subtitle.toLowerCase().includes(query)
       )
     }
 
@@ -47,11 +38,9 @@ export default function Recipes() {
   }, [activeCategory, searchQuery])
 
   const isRecipeLocked = (recipe: typeof recipes[0]) => {
-    const unlockDay = (recipe as any).unlockDay
-    if (recipe.premium && unlockDay) {
-      return daysSinceStart < unlockDay
+    if (recipe.premium && recipe.unlockDay) {
+      return daysSinceStart < recipe.unlockDay
     }
-    // Premium recipes without specific unlockDay: locked if less than 7 days
     if (recipe.premium) {
       return daysSinceStart < 7
     }
@@ -59,7 +48,7 @@ export default function Recipes() {
   }
 
   const isRecipeNew = (recipe: typeof recipes[0]) => {
-    return !seenRecipes.includes(recipe.id)
+    return !userData.seenRecipes.includes(recipe.id)
   }
 
   const totalCount = recipes.length
@@ -152,7 +141,7 @@ export default function Recipes() {
             </div>
           </div>
 
-          {/* Filters */}
+          {/* Category filters */}
           <div className="pb-3">
             <RecipeFilters
               activeCategory={activeCategory}
@@ -160,11 +149,11 @@ export default function Recipes() {
             />
           </div>
 
-          {/* Bottom edge fade */}
+          {/* Bottom edge */}
           <div className="h-px bg-gradient-to-r from-transparent via-cream-200/50 to-transparent" />
         </div>
 
-        {/* Results count when filtering */}
+        {/* Active filter count */}
         <AnimatePresence>
           {(searchQuery || activeCategory) && (
             <motion.div
@@ -185,10 +174,7 @@ export default function Recipes() {
         {/* Recipe grid */}
         <div className="px-4 pt-4">
           <LayoutGroup>
-            <motion.div
-              layout
-              className="grid grid-cols-2 gap-3"
-            >
+            <motion.div layout className="grid grid-cols-2 gap-3">
               <AnimatePresence mode="popLayout">
                 {filteredRecipes.map((recipe) => (
                   <RecipeCard
@@ -196,7 +182,7 @@ export default function Recipes() {
                     recipe={recipe}
                     isNew={isRecipeNew(recipe)}
                     isLocked={isRecipeLocked(recipe)}
-                    isFavorite={favorites.includes(recipe.id)}
+                    isFavorite={isFavorite(recipe.id)}
                     onToggleFavorite={() => toggleFavorite(recipe.id)}
                   />
                 ))}
