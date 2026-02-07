@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { recipes } from '../../data/recipes'
@@ -13,47 +13,44 @@ const categoryLabels: Record<string, { label: string; emoji: string }> = {
   relaxante: { label: 'Relaxante', emoji: '\u{1F319}' },
   energizante: { label: 'Energizante', emoji: '\u{26A1}' },
   diuretico: { label: 'Diuretico', emoji: '\u{1F4A7}' },
-  digestivo: { label: 'Digestivo', emoji: '\u{1F33F}' },
-}
-
-const categoryColors: Record<string, string> = {
-  termogenico: '#e25822',
-  detox: '#5cb85c',
-  relaxante: '#7b68ee',
-  energizante: '#f5a623',
-  diuretico: '#4a9adb',
-  digestivo: '#8fbc8f',
 }
 
 const difficultyLabels: Record<string, string> = {
   facil: 'Facil',
   medio: 'Medio',
-  dificil: 'Avancado',
 }
 
-const stagger = {
-  hidden: { opacity: 0 },
-  show: {
-    opacity: 1,
-    transition: { staggerChildren: 0.06 },
-  },
+const bestTimeLabels: Record<string, string> = {
+  manha: '\u{1F305} Manha',
+  tarde: '\u{2600}\u{FE0F} Tarde',
+  noite: '\u{1F319} Noite',
+  qualquer: '\u{23F0} Qualquer horario',
 }
 
-const fadeUp = {
-  hidden: { opacity: 0, y: 16 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: 'easeOut' } },
+const bestTimeEmojis: Record<string, string> = {
+  manha: '\u{1F305}',
+  tarde: '\u{2600}\u{FE0F}',
+  noite: '\u{1F319}',
+  qualquer: '\u{23F0}',
 }
 
 export default function RecipeDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { userData, updateUserData } = useUserData()
+  const { userData, toggleFavorite, isFavorite, markTeaPrepared, markRecipeSeen } = useUserData()
 
   const [showTimer, setShowTimer] = useState(false)
   const [showPreparedConfirm, setShowPreparedConfirm] = useState(false)
   const [checkedIngredients, setCheckedIngredients] = useState<Set<number>>(new Set())
 
   const recipe = recipes.find((r) => r.id === id)
+
+  // Mark recipe as seen when viewed
+  useEffect(() => {
+    if (recipe) {
+      markRecipeSeen(recipe.id)
+    }
+  }, [recipe, markRecipeSeen])
 
   if (!recipe) {
     return (
@@ -77,40 +74,17 @@ export default function RecipeDetail() {
     )
   }
 
-  const recipeColor = (recipe as any).color || categoryColors[recipe.category] || '#5cb85c'
-  const recipeImage = (recipe as any).image || '\u{1F375}'
-  const recipeSubtitle = (recipe as any).subtitle || recipe.description
-  const recipeDifficulty = (recipe as any).difficulty || 'facil'
-  const recipeBestTime = (recipe as any).bestTime || recipe.timeSlots?.join(', ') || ''
-  const recipeCuriosity = (recipe as any).curiosity || ''
-  const recipeSteps = (recipe as any).steps || recipe.instructions || []
-  const recipeIngredients: { item: string; quantity: string }[] =
-    Array.isArray(recipe.ingredients) && recipe.ingredients.length > 0
-      ? typeof recipe.ingredients[0] === 'string'
-        ? (recipe.ingredients as string[]).map((ing) => ({ item: ing, quantity: '' }))
-        : (recipe.ingredients as any)
-      : []
-
-  const isFavorite = userData.favorites?.includes(recipe.id) || false
   const daysSinceStart = userData.startDate ? getDaysSinceStart(userData.startDate) : 1
-  const unlockDay = (recipe as any).unlockDay
-  const isLocked = recipe.premium && unlockDay ? daysSinceStart < unlockDay : false
-
+  const isLocked = recipe.premium && recipe.unlockDay ? daysSinceStart < recipe.unlockDay : false
   const isSene = recipe.id.toLowerCase().includes('sene')
+  const recipeFavorite = isFavorite(recipe.id)
 
-  const toggleFavorite = () => {
-    const currentFavorites = userData.favorites || []
-    const newFavorites = currentFavorites.includes(recipe.id)
-      ? currentFavorites.filter((f: string) => f !== recipe.id)
-      : [...currentFavorites, recipe.id]
-    updateUserData({ favorites: newFavorites })
+  const handleToggleFavorite = () => {
+    toggleFavorite(recipe.id)
   }
 
   const markAsPrepared = () => {
-    const currentPrepared = userData.preparedTeas || []
-    if (!currentPrepared.includes(recipe.id)) {
-      updateUserData({ preparedTeas: [...currentPrepared, recipe.id] })
-    }
+    markTeaPrepared(recipe.id)
     setShowPreparedConfirm(true)
     setTimeout(() => setShowPreparedConfirm(false), 3000)
   }
@@ -125,12 +99,6 @@ export default function RecipeDetail() {
       }
       return next
     })
-  }
-
-  const bestTimeLabels: Record<string, string> = {
-    manha: '\u{1F305} Manha',
-    tarde: '\u{2600}\u{FE0F} Tarde',
-    noite: '\u{1F319} Noite',
   }
 
   if (isLocked) {
@@ -150,7 +118,7 @@ export default function RecipeDetail() {
             </div>
             <h2 className="font-display text-xl text-green-950 font-bold mb-2">Receita Bloqueada</h2>
             <p className="text-green-700/60 font-body text-sm mb-1 text-center">
-              Esta receita sera liberada no dia {unlockDay}.
+              Esta receita sera liberada no dia {recipe.unlockDay}.
             </p>
             <p className="text-green-600/50 font-body text-xs mb-6">
               Voce esta no dia {daysSinceStart} da sua jornada.
@@ -174,10 +142,10 @@ export default function RecipeDetail() {
         <div
           className="relative overflow-hidden"
           style={{
-            background: `linear-gradient(180deg, ${recipeColor}25 0%, ${recipeColor}08 60%, transparent 100%)`,
+            background: `linear-gradient(180deg, ${recipe.color}25 0%, ${recipe.color}08 60%, transparent 100%)`,
           }}
         >
-          {/* Back button */}
+          {/* Navigation bar */}
           <div
             className="sticky top-0 z-30 flex items-center justify-between px-4 pt-3 pb-2"
             style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 0.75rem)' }}
@@ -199,10 +167,9 @@ export default function RecipeDetail() {
               </svg>
             </button>
 
-            {/* Favorite button */}
             <motion.button
               whileTap={{ scale: 0.85 }}
-              onClick={toggleFavorite}
+              onClick={handleToggleFavorite}
               className="
                 w-10 h-10 rounded-full
                 bg-white/80 backdrop-blur-sm shadow-sm
@@ -211,18 +178,18 @@ export default function RecipeDetail() {
                 transition-all duration-200
                 focus:outline-none
               "
-              aria-label={isFavorite ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
+              aria-label={recipeFavorite ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
             >
               <motion.svg
                 width="20"
                 height="20"
                 viewBox="0 0 24 24"
-                fill={isFavorite ? '#e25822' : 'none'}
-                stroke={isFavorite ? '#e25822' : '#6b7280'}
+                fill={recipeFavorite ? '#e25822' : 'none'}
+                stroke={recipeFavorite ? '#e25822' : '#6b7280'}
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                animate={isFavorite ? { scale: [1, 1.3, 1] } : {}}
+                animate={recipeFavorite ? { scale: [1, 1.3, 1] } : {}}
                 transition={{ duration: 0.3 }}
               >
                 <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
@@ -233,11 +200,11 @@ export default function RecipeDetail() {
           {/* Decorative circles */}
           <div
             className="absolute -top-20 -right-20 w-64 h-64 rounded-full opacity-10"
-            style={{ backgroundColor: recipeColor }}
+            style={{ backgroundColor: recipe.color }}
           />
           <div
             className="absolute -bottom-10 -left-10 w-40 h-40 rounded-full opacity-5"
-            style={{ backgroundColor: recipeColor }}
+            style={{ backgroundColor: recipe.color }}
           />
 
           {/* Hero content */}
@@ -248,7 +215,7 @@ export default function RecipeDetail() {
               transition={{ type: 'spring', stiffness: 200, damping: 15, delay: 0.1 }}
               className="text-7xl block mb-4 drop-shadow-lg"
             >
-              {recipeImage}
+              {recipe.image}
             </motion.span>
 
             <motion.h1
@@ -266,7 +233,7 @@ export default function RecipeDetail() {
               transition={{ delay: 0.2 }}
               className="font-body text-sm text-green-700/70 max-w-xs mx-auto leading-relaxed"
             >
-              {recipeSubtitle}
+              {recipe.subtitle}
             </motion.p>
           </div>
         </div>
@@ -279,23 +246,20 @@ export default function RecipeDetail() {
           className="px-5 -mt-2 mb-6"
         >
           <div className="flex flex-wrap gap-2 justify-center">
-            {/* Category */}
             <span
               className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium font-body"
               style={{
-                backgroundColor: `${recipeColor}15`,
-                color: recipeColor,
+                backgroundColor: `${recipe.color}15`,
+                color: recipe.color,
               }}
             >
               {categoryLabels[recipe.category]?.emoji} {categoryLabels[recipe.category]?.label || recipe.category}
             </span>
 
-            {/* Difficulty */}
             <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium font-body bg-cream-200 text-green-800">
-              {'\u{1F4AA}'} {difficultyLabels[recipeDifficulty] || recipeDifficulty}
+              {'\u{1F4AA}'} {difficultyLabels[recipe.difficulty] || recipe.difficulty}
             </span>
 
-            {/* Prep time */}
             <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium font-body bg-cream-200 text-green-800">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="12" cy="12" r="10" />
@@ -304,45 +268,38 @@ export default function RecipeDetail() {
               {recipe.prepTime} min
             </span>
 
-            {/* Best time */}
-            {recipeBestTime && (
-              <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium font-body bg-cream-200 text-green-800">
-                {typeof recipeBestTime === 'string' && bestTimeLabels[recipeBestTime]
-                  ? bestTimeLabels[recipeBestTime]
-                  : recipeBestTime}
-              </span>
-            )}
+            <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium font-body bg-cream-200 text-green-800">
+              {bestTimeLabels[recipe.bestTime] || recipe.bestTime}
+            </span>
           </div>
         </motion.div>
 
-        {/* Main content area */}
+        {/* Main content */}
         <div className="px-5 space-y-6">
 
-          {/* Ingredients section */}
+          {/* Ingredients */}
           <motion.section
-            variants={stagger}
-            initial="hidden"
-            animate="show"
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
           >
-            <motion.div variants={fadeUp} className="flex items-center gap-2 mb-3">
+            <div className="flex items-center gap-2 mb-3">
               <span className="text-lg">{'\u{1F33F}'}</span>
               <h2 className="font-display text-lg font-bold text-green-950">Ingredientes</h2>
-            </motion.div>
-            <div className="bg-white rounded-2xl p-4 card-shadow space-y-0">
-              {recipeIngredients.map((ing, i) => (
-                <motion.button
+            </div>
+            <div className="bg-white rounded-2xl p-4 card-shadow">
+              {recipe.ingredients.map((ing, i) => (
+                <button
                   key={i}
-                  variants={fadeUp}
                   onClick={() => toggleIngredient(i)}
                   className={`
                     w-full flex items-center gap-3 px-2 py-3 rounded-xl
                     text-left transition-all duration-200
                     hover:bg-cream-50 active:bg-cream-100
                     focus:outline-none
-                    ${i < recipeIngredients.length - 1 ? 'border-b border-cream-100' : ''}
+                    ${i < recipe.ingredients.length - 1 ? 'border-b border-cream-100' : ''}
                   `}
                 >
-                  {/* Checkbox */}
                   <span
                     className={`
                       w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0
@@ -371,7 +328,6 @@ export default function RecipeDetail() {
                     )}
                   </span>
 
-                  {/* Ingredient text */}
                   <span
                     className={`
                       font-body text-sm flex-1 transition-all duration-200
@@ -381,39 +337,44 @@ export default function RecipeDetail() {
                       }
                     `}
                   >
-                    {ing.quantity ? `${ing.quantity} - ${ing.item}` : ing.item}
+                    {ing.quantity ? (
+                      <>
+                        <span className="font-semibold text-green-800">{ing.quantity}</span>
+                        {' '}{ing.item}
+                      </>
+                    ) : (
+                      ing.item
+                    )}
                   </span>
-                </motion.button>
+                </button>
               ))}
             </div>
           </motion.section>
 
-          {/* Steps section */}
+          {/* Steps */}
           <motion.section
-            variants={stagger}
-            initial="hidden"
-            animate="show"
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.35 }}
           >
-            <motion.div variants={fadeUp} className="flex items-center gap-2 mb-3">
+            <div className="flex items-center gap-2 mb-3">
               <span className="text-lg">{'\u{1F4D6}'}</span>
               <h2 className="font-display text-lg font-bold text-green-950">Modo de Preparo</h2>
-            </motion.div>
+            </div>
             <div className="space-y-3">
-              {recipeSteps.map((step: string, i: number) => (
+              {recipe.steps.map((step, i) => (
                 <motion.div
                   key={i}
-                  variants={fadeUp}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.4 + i * 0.06 }}
                   className="flex gap-3 bg-white rounded-2xl p-4 card-shadow"
                 >
-                  {/* Step number */}
                   <span
-                    className="
-                      w-7 h-7 rounded-full flex items-center justify-center
-                      text-xs font-bold font-body shrink-0 mt-0.5
-                    "
+                    className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold font-body shrink-0 mt-0.5"
                     style={{
-                      backgroundColor: `${recipeColor}18`,
-                      color: recipeColor,
+                      backgroundColor: `${recipe.color}18`,
+                      color: recipe.color,
                     }}
                   >
                     {i + 1}
@@ -454,22 +415,24 @@ export default function RecipeDetail() {
             </button>
           </motion.div>
 
-          {/* Benefits section */}
-          {recipe.benefits && recipe.benefits.length > 0 && (
+          {/* Benefits */}
+          {recipe.benefits.length > 0 && (
             <motion.section
-              variants={stagger}
-              initial="hidden"
-              animate="show"
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.55 }}
             >
-              <motion.div variants={fadeUp} className="flex items-center gap-2 mb-3">
+              <div className="flex items-center gap-2 mb-3">
                 <span className="text-lg">{'\u{2B50}'}</span>
                 <h2 className="font-display text-lg font-bold text-green-950">Beneficios</h2>
-              </motion.div>
+              </div>
               <div className="bg-gradient-to-br from-green-800 to-green-900 rounded-2xl p-4 space-y-2.5">
                 {recipe.benefits.map((benefit, i) => (
                   <motion.div
                     key={i}
-                    variants={fadeUp}
+                    initial={{ opacity: 0, x: -8 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.6 + i * 0.05 }}
                     className="flex items-center gap-3"
                   >
                     <span className="w-6 h-6 rounded-full bg-green-600/30 flex items-center justify-center shrink-0">
@@ -486,59 +449,52 @@ export default function RecipeDetail() {
             </motion.section>
           )}
 
-          {/* Best time section */}
-          {recipeBestTime && (
-            <motion.section variants={stagger} initial="hidden" animate="show">
-              <motion.div variants={fadeUp} className="flex items-center gap-2 mb-3">
-                <span className="text-lg">{'\u{23F0}'}</span>
-                <h2 className="font-display text-lg font-bold text-green-950">Melhor Horario</h2>
-              </motion.div>
-              <motion.div variants={fadeUp} className="bg-white rounded-2xl p-4 card-shadow">
-                <div className="flex items-center gap-3">
-                  <div
-                    className="w-10 h-10 rounded-xl flex items-center justify-center"
-                    style={{ backgroundColor: `${recipeColor}15` }}
-                  >
-                    <span className="text-xl">
-                      {Array.isArray(recipe.timeSlots) && recipe.timeSlots.includes('manha')
-                        ? '\u{1F305}'
-                        : Array.isArray(recipe.timeSlots) && recipe.timeSlots.includes('noite')
-                          ? '\u{1F319}'
-                          : '\u{2600}\u{FE0F}'}
-                    </span>
-                  </div>
-                  <div>
-                    <p className="font-body text-sm font-semibold text-green-950">
-                      {typeof recipeBestTime === 'string' && bestTimeLabels[recipeBestTime]
-                        ? bestTimeLabels[recipeBestTime]
-                        : Array.isArray(recipe.timeSlots)
-                          ? recipe.timeSlots.map((t: string) => bestTimeLabels[t] || t).join(' / ')
-                          : recipeBestTime}
-                    </p>
-                    <p className="font-body text-xs text-green-700/60 mt-0.5">
-                      Para melhores resultados
-                    </p>
-                  </div>
+          {/* Best time */}
+          <motion.section
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6 }}
+          >
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-lg">{'\u{23F0}'}</span>
+              <h2 className="font-display text-lg font-bold text-green-950">Melhor Horario</h2>
+            </div>
+            <div className="bg-white rounded-2xl p-4 card-shadow">
+              <div className="flex items-center gap-3">
+                <div
+                  className="w-10 h-10 rounded-xl flex items-center justify-center"
+                  style={{ backgroundColor: `${recipe.color}15` }}
+                >
+                  <span className="text-xl">{bestTimeEmojis[recipe.bestTime] || '\u{23F0}'}</span>
                 </div>
-              </motion.div>
-            </motion.section>
-          )}
+                <div>
+                  <p className="font-body text-sm font-semibold text-green-950">
+                    {bestTimeLabels[recipe.bestTime] || recipe.bestTime}
+                  </p>
+                  <p className="font-body text-xs text-green-700/60 mt-0.5">
+                    Para melhores resultados
+                  </p>
+                </div>
+              </div>
+            </div>
+          </motion.section>
 
           {/* Curiosity section */}
-          {recipeCuriosity && (
-            <motion.section variants={stagger} initial="hidden" animate="show">
-              <motion.div variants={fadeUp} className="flex items-center gap-2 mb-3">
+          {recipe.curiosity && (
+            <motion.section
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.65 }}
+            >
+              <div className="flex items-center gap-2 mb-3">
                 <span className="text-lg">{'\u{1F4A1}'}</span>
                 <h2 className="font-display text-lg font-bold text-green-950">Voce Sabia?</h2>
-              </motion.div>
-              <motion.div
-                variants={fadeUp}
-                className="bg-gradient-to-br from-gold-300/30 to-gold-400/10 border border-gold-300/40 rounded-2xl p-4"
-              >
+              </div>
+              <div className="bg-gradient-to-br from-gold-300/30 to-gold-400/10 border border-gold-300/40 rounded-2xl p-4">
                 <p className="font-body text-sm text-green-900 leading-relaxed italic">
-                  "{recipeCuriosity}"
+                  &ldquo;{recipe.curiosity}&rdquo;
                 </p>
-              </motion.div>
+              </div>
             </motion.section>
           )}
 
@@ -547,6 +503,7 @@ export default function RecipeDetail() {
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.7 }}
               className="bg-terra-400/15 border border-terra-400/30 rounded-2xl p-4 flex gap-3"
             >
               <span className="text-xl shrink-0">{'\u{26A0}\u{FE0F}'}</span>
@@ -560,10 +517,11 @@ export default function RecipeDetail() {
           )}
 
           {/* Restrictions disclaimer */}
-          {recipe.restrictions && recipe.restrictions.length > 0 && (
+          {recipe.restrictions.length > 0 && (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.7 }}
               className="bg-cream-100 rounded-2xl p-4 flex gap-3"
             >
               <span className="text-lg shrink-0">{'\u{2139}\u{FE0F}'}</span>
@@ -590,7 +548,7 @@ export default function RecipeDetail() {
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6 }}
+            transition={{ delay: 0.75 }}
             className="pb-4"
           >
             <button
@@ -641,7 +599,7 @@ export default function RecipeDetail() {
           )}
         </AnimatePresence>
 
-        {/* Prep Timer modal */}
+        {/* Prep Timer overlay */}
         <AnimatePresence>
           {showTimer && (
             <PrepTimer
